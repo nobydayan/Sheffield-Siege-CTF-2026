@@ -1,0 +1,164 @@
+# Untraceable — Sheffield Siege 26
+
+| Field      | Value                        |
+|------------|------------------------------|
+| Category   | Reversing                    |
+| Points     | 625                          |
+| Difficulty | Very Easy                    |
+| Solves     | 18                           |
+| Flag       | `HTB{0ld3st_tr1ck_1n_th3_b00k}` |
+
+---
+
+## Overview
+
+**Untraceable** is a Linux x86-64 binary that uses the classic `ptrace` anti-debugging trick to detect when it's running inside a debugger. Once you bypass that check, the binary asks for a password, compares it via `strncmp`, and prints the flag if the comparison succeeds. The flag name itself is the joke — **"oldest trick in the book"**.
+
+---
+
+## Analysis
+
+### Step 1 — Load the binary in GDB
+
+```bash
+gdb ./untraceable
+```
+
+No debug symbols are present:
+
+```
+(No debugging symbols found in ./untraceable)
+```
+
+### Step 2 — Catch the ptrace anti-debug check
+
+The binary calls `ptrace(PTRACE_TRACEME, ...)` at startup. Under a debugger, this syscall returns `-1` (EPERM) because the process is already being traced — which the binary uses as a signal to exit or misbehave.
+
+We intercept it before it can act on the result:
+
+```gdb
+(gdb) catch syscall ptrace
+Catchpoint 1 (syscall 'ptrace' [101])
+(gdb) run
+```
+
+GDB breaks at the `ptrace` **call**:
+
+```
+Catchpoint 1 (call to syscall ptrace), 0x00007ffff7d0e328 in ptrace ()
+```
+
+### Step 3 — Bypass the anti-debug
+
+Force `ptrace` to return `0` (success), making the binary believe it is **not** being traced:
+
+```gdb
+(gdb) set $rax = 0
+(gdb) continue
+```
+
+GDB breaks again at the **return** from `ptrace`:
+
+```
+Catchpoint 1 (returned from syscall ptrace), 0x00007ffff7d0e328 in ptrace ()
+```
+
+Set `$rax = 0` again to override the actual return value:
+
+```gdb
+(gdb) set $rax = 0
+(gdb) continue
+```
+
+The binary now proceeds normally and prints:
+
+```
+What is the password to the archive?
+```
+
+### Step 4 — Intercept the password comparison
+
+Set breakpoints on `strcmp` and `strncmp` to catch the password check:
+
+```gdb
+(gdb) break strcmp
+(gdb) break strncmp
+(gdb) continue
+```
+
+GDB breaks at `strncmp` (Breakpoint 3). At this point, the password has already been leaked in plaintext to stdout:
+
+```
+What is the password to the archive? SuperSecretPassword-DoNotRead!
+```
+
+> The binary prints the password itself — no need to inspect registers or memory.
+
+### Step 5 — Continue to the flag
+
+```gdb
+(gdb) continue
+```
+
+```
+HTB{0ld3st_tr1ck_1n_th3_b00k}
+[Inferior 1 (process 34966) exited normally]
+```
+
+---
+
+## GDB Session (Annotated)
+
+```gdb
+$ gdb ./untraceable
+
+(gdb) catch syscall ptrace           # Catch ptrace syscall
+Catchpoint 1 (syscall 'ptrace' [101])
+
+(gdb) run
+# → Breaks at ptrace CALL
+Catchpoint 1 (call to syscall ptrace)
+
+(gdb) set $rax = 0                   # Fake "not traced" return
+(gdb) continue
+# → Breaks at ptrace RETURN
+
+(gdb) set $rax = 0                   # Override actual return value
+(gdb) continue
+# → Binary proceeds: asks for password, prints it in plaintext
+
+(gdb) break strcmp
+(gdb) break strncmp
+# → Breaks at strncmp during password comparison
+
+(gdb) continue
+# → Flag printed: HTB{0ld3st_tr1ck_1n_th3_b00k}
+```
+
+---
+
+## Key Takeaways
+
+| Concept | Detail |
+|---|---|
+| Anti-debug technique | `ptrace(PTRACE_TRACEME)` — returns -1 under a debugger |
+| Bypass method | Intercept syscall with `catch syscall ptrace`, force `$rax = 0` |
+| Password leak | Binary printed password in plaintext before `strncmp` |
+| Flag | `HTB{0ld3st_tr1ck_1n_th3_b00k}` |
+
+### Why `ptrace(PTRACE_TRACEME)`?
+
+When a process calls `ptrace(PTRACE_TRACEME)`, it signals to the OS that it wants to be traced by its parent. If a debugger is already attached, the call fails with `EPERM`. Malware and CTF binaries abuse this as a cheap anti-debug: if `ptrace` fails → debugger detected → bail out.
+
+The fix is always the same: catch the syscall and zero out the return value before the binary can check it.
+
+---
+
+## Tools Used
+
+- `gdb` (GNU Debugger) — dynamic analysis and anti-debug bypass
+- Kali Linux
+
+---
+
+*Write-up by [Hertfordshire Team -F2F](https://github.com/nobydayan) — Sheffield Siege 26, March 2026*

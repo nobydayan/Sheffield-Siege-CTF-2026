@@ -1,0 +1,179 @@
+# Digital Phoenix Investigation — Sheffield Siege 26
+
+| Field      | Value         |
+|------------|---------------|
+| Category   | OSINT         |
+| Points     | 700           |
+| Difficulty | Easy          |
+| Solves     | 12            |
+
+---
+
+## Scenario
+
+> You're a digital detective with the Nightwatch Investigations Agency tracking a mysterious criminal known as **"The Phantom"** who operates the **Digital Phoenix** marketplace in the neon-lit underworld. The Phantom has made critical OPSEC mistakes across multiple platforms, leaving digital breadcrumbs through dark web forums, technical discussion boards, professional networks, and corporate databases. Follow the shadows through rain-soaked digital alleyways to expose their true identity before they disappear into the night.
+
+---
+
+## Platforms to Investigate
+
+| Platform | Purpose |
+|---|---|
+| **CryptoTalk** | Underground forum — marketplace discussions |
+| **TechHelp Q&A** | Technical support requests leaking infrastructure |
+| **LinkedOut** | Professional networking profile & business connections |
+| **Canadian Business Registry** | Corporate records, director info |
+
+---
+
+## Flags & How They Were Found
+
+### 🚩 Flag 1 — Forum Username
+**`alex_phoenix_crypto`**
+
+**Source:** CryptoTalk forum — the threat actor posted under this handle on Jan 15, 2022 in a thread titled *"New Anonymous Marketplace — Phoenix Rising"*, promoting `digitalphoenix.onion`.
+
+> Also identified as `alex.martinez.crypto` in legacy posts — same persona, different era.
+
+![CryptoTalk forum post showing username alex_phoenix_crypto]
+
+---
+
+### 🚩 Flag 2 — Leaked Email Address
+**`a.martinez.crypto@protonmail.com`**
+
+**Source:** Same CryptoTalk post (Jan 15, 2022). The actor publicly listed their contact email at the bottom of their forum post — a critical OPSEC failure that directly links the anonymous forum handle to a named identity:
+
+```
+For any serious inquiries about partnerships or development work,
+contact: a.martinez.crypto@protonmail.com
+```
+
+The surname fragment `martinez` in the email directly corroborates the real name found later in the business registry.
+
+---
+
+### 🚩 Flag 3 — SSH Key Identifier
+**`phoenix-key-2022`**
+
+**Source:** TechHelp Q&A — the actor posted a technical support request that inadvertently included their SSH config file. The `IdentityFile` path contained the key label `phoenix-key-2022`, linking the technical infrastructure back to the same persona.
+
+**Lesson:** SSH config leaks are a goldmine — they reveal hostnames, usernames, key paths, and jump hosts.
+
+---
+
+### 🚩 Flag 4 — Company Front
+**`EBX TECHNOLOGIES LTD.`**
+
+**Source:** LinkedOut profile for **Alex Martinez** — *"Senior Full-Stack Developer & Cybersecurity Consultant"*, Vancouver, BC. His experience section listed:
+
+```
+Founder — EBX Technologies • Vancouver, BC
+2020 – Present
+Blockchain integration and secure marketplace development
+```
+
+The "secure marketplace development" description and the 2020 founding date aligned precisely with when `digitalphoenix.onion` was being stood up.
+
+---
+
+### 🚩 Flag 5 — Real Full Name
+**`Alejandro Nicolas Martinez`**
+
+**Source:** Canadian Business Registry — searching for **EBX Technologies Ltd.** (Registration #: BC-2020-789123, incorporated March 15, 2020) revealed the Directors & Officers section, which listed:
+
+```
+MARTINEZ, ALEJANDRO NICOLAS
+Position: Director
+Date of Birth: October 19, 1992
+```
+
+"Alex Martinez" on LinkedOut was a shortened public alias for the same individual.
+
+---
+
+### 🚩 Flag 6 — Physical Address
+**`1247 Phoenix Street Suite 301 Vancouver Canada`**
+
+**Source:** Canadian Business Registry — the registered office address for EBX Technologies Ltd.:
+
+```
+EBX TECHNOLOGIES LTD.
+1247 PHOENIX STREET, SUITE 301
+VANCOUVER, BC V6B 1A1
+Canada
+```
+
+Note the street name: **Phoenix** Street — the same word embedded in the marketplace name (`Digital Phoenix`) and the forum handle (`alex_phoenix_crypto`). A recurring motif the actor was evidently attached to, which made cross-platform attribution straightforward.
+
+---
+
+## Investigation Trail (OSINT Graph)
+
+```
+CryptoTalk post (Jan 2022)
+    └── Username: alex_phoenix_crypto
+    └── Email: a.martinez.crypto@protonmail.com ──────────────┐
+    └── .onion: digitalphoenix.onion                          │
+                                                               ▼
+TechHelp Q&A                                     Surname fragment: martinez
+    └── SSH config leak                                        │
+    └── Key: phoenix-key-2022                                  │
+                                                               ▼
+LinkedOut profile: Alex Martinez                  ─── EBX Technologies Ltd.
+    └── Founder, EBX Technologies (2020–present)               │
+    └── Vancouver, BC                                          ▼
+                                              Canadian Business Registry
+                                                  └── Real name: ALEJANDRO NICOLAS MARTINEZ
+                                                  └── DOB: October 19, 1992
+                                                  └── Address: 1247 Phoenix St, Suite 301
+                                                               Vancouver, BC V6B 1A1
+```
+
+---
+
+## Key OPSEC Failures
+
+| Mistake | Impact |
+|---|---|
+| Used real surname fragment in ProtonMail address (`martinez`) | Linked anonymous forum post to real identity |
+| Posted contact email publicly on criminal forum | Trivial cross-platform attribution |
+| Same "Phoenix" motif across all aliases, company name, and street address | Made pivot chain obvious |
+| Registered a legitimate company under real name for an illicit business | Full legal identity exposed via public business registry |
+| SSH config pasted verbatim in tech support post | Leaked infrastructure key identifier |
+
+---
+
+## Tools & Methodology
+
+| Tool / Platform | Use |
+|---|---|
+| CryptoTalk forum | Seed username + email harvest |
+| TechHelp Q&A | SSH config / infrastructure leak |
+| LinkedOut | Real name → company pivot |
+| Canadian Business Registry | Company → director real name + address |
+| Sherlock / WhatsMyName | Username enumeration across platforms |
+
+### General OSINT Pivot Order
+1. **Seed** — any username, email, or alias
+2. **Enumerate** — find all accounts using that seed (Sherlock, WhatsMyName)
+3. **Harvest** — extract emails, phone numbers, company names from profiles
+4. **Pivot** — use harvested data as new seeds (email → business registry → real name)
+5. **Verify** — cross-reference across at least 2 independent sources before attributing
+
+---
+
+## Summary of Flags
+
+| Flag | Answer |
+|---|---|
+| Forum Username | `alex_phoenix_crypto` |
+| SSH Key Identifier | `phoenix-key-2022` |
+| Leaked Email | `a.martinez.crypto@protonmail.com` |
+| Company Front | `EBX TECHNOLOGIES LTD.` |
+| Real Full Name | `Alejandro Nicolas Martinez` |
+| Physical Address | `1247 Phoenix Street Suite 301 Vancouver Canada` |
+
+---
+
+*Write-up by [Hertfordshire Team -F2F](https://github.com/nobydayan) — Sheffield Siege 26, March 2026*
