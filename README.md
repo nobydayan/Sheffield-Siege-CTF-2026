@@ -17,7 +17,7 @@ Sheffield Siege CTF 2026 - Write up &amp; Analysis
 | # | Challenge | Category | Points | Difficulty | Write-Up |
 |---|-----------|----------|--------|------------|----------|
 | 1 | Untraceable | Reversing | 625 | Very Easy | [View](./Reversing/Untraceable.md) |
-| 2 | Ransomware Mu... | OSINT | 750 | Very Easy | [View](./OSINT/Ransomware_Mu.md) |
+| 2 | Ransomware Mu.. | OSINT | 750 | Very Easy | [View](./OSINT/Ransomware_Mu.md) |
 | 3 | Digital Phoenix Investigation | OSINT | 700 | Easy | [View](./OSINT/Digital_Phoenix_Investigation.md) |
 | 4 | Taxes | Web | 525 | Very Easy | [View](./Web/Taxes.md) |
 | 5 | Auction Chat | AI | 675 | Easy | [View](./AI/Auction_Chat.md) |
