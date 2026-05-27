@@ -6,7 +6,7 @@ Sheffield Siege CTF 2026 - Write up &amp; Analysis
 
 **Event:** The Sheffield Siege 26 (hosted by Sheffield Hallam University)  
 **Date:** March 28, 2026  
-**Team:** Hertfordshire Team -F2F (University of Hertfordshire)  
+**Team:** Hertfordshire Team -F2F (University of Hertfordshire) Team Leader - Dayanidhi Meganathan  
 **Final Rank:** 14th  
 **Score:** 3,175 points | 5/15 Scenarios | 10/39 Flags  
 
